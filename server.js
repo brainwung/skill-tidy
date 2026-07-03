@@ -583,6 +583,27 @@ function moveToTrash(skillDir) {
   };
 }
 
+function openLocalPath(targetPath) {
+  const normalized = path.resolve(expandHome(targetPath || ""));
+  if (!normalized || !fs.existsSync(normalized)) {
+    return {
+      ok: false,
+      message: "目录不存在"
+    };
+  }
+
+  execFile("open", [normalized], (error) => {
+    if (error) {
+      // The response has already been sent; failures here are intentionally non-fatal.
+    }
+  });
+
+  return {
+    ok: true,
+    message: "已打开目录"
+  };
+}
+
 function duplicateScore(item) {
   let score = 0;
   if (item.command) score += 50;
@@ -731,6 +752,17 @@ function createServer() {
       const body = await readJson(req);
       const result = moveToTrash(body.path);
       send(res, result.ok ? 200 : 403, JSON.stringify(result), mime[".json"]);
+    } catch (error) {
+      send(res, 400, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/open-path") {
+    try {
+      const body = await readJson(req);
+      const result = openLocalPath(body.path);
+      send(res, result.ok ? 200 : 404, JSON.stringify(result), mime[".json"]);
     } catch (error) {
       send(res, 400, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
     }
