@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skill Tidy Loading</title>
+  <style>
+    :root {
+      --canvas-bg: linear-gradient(108deg, #f4f5f6 0%, #eef2f4 48%, #e7edf1 100%);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0;
+      overflow: hidden;
+      background: var(--canvas-bg);
+      -webkit-app-region: drag;
+    }
+
+    .loading-icon {
+      display: block;
+      width: 66px;
+      height: 66px;
+      filter:
+        drop-shadow(0 0 1px rgba(61, 75, 196, 0.28))
+        drop-shadow(0 8px 18px rgba(61, 75, 196, 0.18));
+      animation: loading-spin-pause 1.8s cubic-bezier(0.55, 0, 0.2, 1) infinite;
+      transform-origin: center;
+    }
+
+    @keyframes loading-spin-pause {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      62%,
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg class="loading-icon" width="672" height="672" viewBox="0 0 672 672" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M310.791 17.094C319.78 -5.69789 352.037 -5.69791 361.026 17.094L439.794 216.813C442.538 223.771 448.046 229.279 455.005 232.024L654.723 310.792C677.515 319.781 677.515 352.037 654.723 361.026L455.005 439.794C448.046 442.538 442.538 448.046 439.794 455.005L361.026 654.723C352.037 677.515 319.78 677.515 310.791 654.723L232.024 455.005C229.279 448.046 223.771 442.538 216.812 439.794L17.0939 361.026C-5.69801 352.037 -5.69803 319.781 17.0939 310.792L216.812 232.024C223.771 229.279 229.279 223.771 232.024 216.813L310.791 17.094Z" fill="white"/>
+  </svg>
+</body>
+</html>

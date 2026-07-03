@@ -18,6 +18,7 @@
       "electron-main.js",
       "server.js",
       "index.html",
+      "splash.html",
       "icon/**/*",
       "build/icon.icns",
       "package.json"
@@ -25,6 +26,7 @@
     "directories": {
       "output": "dist"
     },
+    "afterSign": "build/afterSign.js",
     "mac": {
       "icon": "build/icon.icns",
       "target": [
