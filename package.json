@@ -16,6 +16,7 @@
     "electronDist": "node_modules/electron/dist",
     "files": [
       "electron-main.js",
+      "preload.js",
       "server.js",
       "index.html",
       "icon/**/*",

@@ -1,4 +1,5 @@
-const { app, BrowserWindow, shell } = require("electron");
+const path = require("path");
+const { app, BrowserWindow, shell, ipcMain } = require("electron");
 const { createServer } = require("./server");
 
 let mainWindow = null;
@@ -24,12 +25,15 @@ async function createWindow() {
     minWidth: 1057,
     minHeight: 678,
     useContentSize: true,
-    titleBarStyle: "hiddenInset",
-    backgroundColor: "#eef2f4",
+    frame: false,
+    transparent: true,
+    backgroundColor: "#00000000",
+    hasShadow: true,
     title: "Skill Tidy",
     webPreferences: {
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.js")
     }
   });
 
@@ -40,6 +44,29 @@ async function createWindow() {
 
   await mainWindow.loadURL(baseUrl);
 }
+
+ipcMain.handle("skill-tidy:window-control", (event, action) => {
+  const targetWindow = BrowserWindow.fromWebContents(event.sender);
+  if (!targetWindow) return;
+
+  if (action === "close") {
+    targetWindow.close();
+    return;
+  }
+
+  if (action === "minimize") {
+    targetWindow.minimize();
+    return;
+  }
+
+  if (action === "zoom") {
+    if (targetWindow.isMaximized()) {
+      targetWindow.unmaximize();
+    } else {
+      targetWindow.maximize();
+    }
+  }
+});
 
 app.whenReady().then(createWindow);
 
