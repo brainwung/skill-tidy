@@ -1,9 +1,7 @@
 const { app, BrowserWindow, shell } = require("electron");
-const path = require("path");
 const { createServer } = require("./server");
 
 let mainWindow = null;
-let splashWindow = null;
 let localServer = null;
 
 function startLocalServer() {
@@ -18,29 +16,6 @@ function startLocalServer() {
 }
 
 async function createWindow() {
-  splashWindow = new BrowserWindow({
-    width: 1057,
-    height: 678,
-    minWidth: 1057,
-    minHeight: 678,
-    useContentSize: true,
-    titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 970, y: 33 },
-    backgroundColor: "#eef2f4",
-    title: "Skill Tidy",
-    webPreferences: {
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  });
-
-  splashWindow.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
-    return { action: "deny" };
-  });
-
-  await splashWindow.loadFile(path.join(__dirname, "splash.html"));
-
   const baseUrl = await startLocalServer();
 
   mainWindow = new BrowserWindow({
@@ -49,9 +24,7 @@ async function createWindow() {
     minWidth: 1057,
     minHeight: 678,
     useContentSize: true,
-    show: false,
     titleBarStyle: "hiddenInset",
-    trafficLightPosition: { x: 970, y: 33 },
     backgroundColor: "#eef2f4",
     title: "Skill Tidy",
     webPreferences: {
@@ -66,16 +39,6 @@ async function createWindow() {
   });
 
   await mainWindow.loadURL(baseUrl);
-  await mainWindow.webContents.executeJavaScript(
-    "new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))"
-  );
-
-  mainWindow.show();
-  mainWindow.focus();
-  if (splashWindow && !splashWindow.isDestroyed()) {
-    splashWindow.destroy();
-  }
-  splashWindow = null;
 }
 
 app.whenReady().then(createWindow);

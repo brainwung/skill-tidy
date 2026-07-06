@@ -10,6 +10,8 @@ const homeDir = process.env.HOME || "/Users/brainwung";
 const appSupportDir = path.join(homeDir, "Library", "Application Support");
 const configPath = process.env.SKILL_TIDY_CONFIG ||
   path.join(appSupportDir, "skill-tidy", "skill-tidy.config.json");
+const skillsCachePath = process.env.SKILL_TIDY_CACHE ||
+  path.join(appSupportDir, "skill-tidy", "skills-cache.json");
 
 const allowedRepos = new Set([
   "/Users/brainwung/.agents/skills/_taste-skill-repo",
@@ -133,6 +135,42 @@ function readConfig() {
 function writeConfig(config) {
   fs.mkdirSync(path.dirname(configPath), { recursive: true });
   fs.writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
+}
+
+function readSkillsCache() {
+  try {
+    if (!fs.existsSync(skillsCachePath)) {
+      return {
+        ok: true,
+        hasCache: false,
+        skills: [],
+        updatedAt: ""
+      };
+    }
+
+    const cached = JSON.parse(fs.readFileSync(skillsCachePath, "utf8"));
+    return {
+      ok: true,
+      hasCache: Array.isArray(cached.skills),
+      skills: Array.isArray(cached.skills) ? cached.skills : [],
+      updatedAt: cached.updatedAt || ""
+    };
+  } catch (error) {
+    return {
+      ok: true,
+      hasCache: false,
+      skills: [],
+      updatedAt: ""
+    };
+  }
+}
+
+function writeSkillsCache(payload) {
+  fs.mkdirSync(path.dirname(skillsCachePath), { recursive: true });
+  fs.writeFileSync(skillsCachePath, `${JSON.stringify({
+    skills: Array.isArray(payload.skills) ? payload.skills : [],
+    updatedAt: payload.updatedAt || new Date().toISOString()
+  }, null, 2)}\n`);
 }
 
 function expandHome(value) {
@@ -568,7 +606,147 @@ function moveToTrash(skillDir) {
 
   fs.mkdirSync(trashRoot, { recursive: true });
   const target = uniqueTrashPath(normalized);
+  const rootInfo = discoverSkillRoots().find((item) => directChildOf(normalized, item.path));
+  const meta = readSkillMeta(path.join(normalized, "SKILL.md"));
+  const name = meta.name || path.basename(normalized);
+  const desc = compactDescription(meta.description, name) || "本地安装的 skill。";
+  const trashMeta = {
+    originalPath: normalized,
+    platform: rootInfo?.platform || "Codex",
+    source: sourceForSkill(normalized, name, rootInfo),
+    category: categoryForSkill(normalized, name, desc),
+    folder: folderLabel(normalized, rootInfo),
+    name,
+    desc,
+    deletedAt: new Date().toISOString()
+  };
 
+  try {
+    fs.renameSync(normalized, target);
+  } catch (error) {
+    if (error.code !== "EXDEV") throw error;
+    fs.cpSync(normalized, target, { recursive: true });
+    fs.rmSync(normalized, { recursive: true, force: true });
+  }
+
+  fs.writeFileSync(path.join(target, ".skill-tidy-trash.json"), `${JSON.stringify(trashMeta, null, 2)}\n`);
+
+  return {
+    ok: true,
+    message: `已移到备份目录：${target}`,
+    trashPath: target
+  };
+}
+
+function readTrashMeta(trashDir) {
+  try {
+    const metaPath = path.join(trashDir, ".skill-tidy-trash.json");
+    if (!fs.existsSync(metaPath)) return {};
+    return JSON.parse(fs.readFileSync(metaPath, "utf8"));
+  } catch (error) {
+    return {};
+  }
+}
+
+function fallbackRestorePath(trashDir, name) {
+  const rootInfo = discoverSkillRoots().find((item) => item.deletable && !item.builtin);
+  return rootInfo ? path.join(rootInfo.path, name || path.basename(trashDir)) : "";
+}
+
+function trashItemForDir(trashDir) {
+  const skillFile = path.join(trashDir, "SKILL.md");
+  if (!fs.existsSync(skillFile)) return null;
+
+  const meta = readTrashMeta(trashDir);
+  const skillMeta = readSkillMeta(skillFile);
+  const name = meta.name || skillMeta.name || path.basename(trashDir).replace(/^\d{4}-\d{2}-\d{2}T.+?-/, "");
+  const desc = meta.desc || compactDescription(skillMeta.description, name) || "已移入回收站的 skill。";
+  const originalPath = meta.originalPath || fallbackRestorePath(trashDir, name);
+
+  return {
+    category: meta.category || categoryForSkill(originalPath || trashDir, name, desc),
+    name,
+    folder: meta.folder || path.basename(originalPath || trashDir),
+    platform: meta.platform || "Codex",
+    source: meta.source || "自制",
+    status: "已删除",
+    desc,
+    path: trashDir,
+    originalPath,
+    deletedAt: meta.deletedAt || "",
+    restorable: Boolean(originalPath)
+  };
+}
+
+function listTrashSkills() {
+  if (!fs.existsSync(trashRoot)) {
+    return {
+      ok: true,
+      updatedAt: new Date().toISOString(),
+      skills: []
+    };
+  }
+
+  const skills = fs.readdirSync(trashRoot, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => trashItemForDir(path.join(trashRoot, entry.name)))
+    .filter(Boolean)
+    .sort((a, b) => String(b.deletedAt).localeCompare(String(a.deletedAt)));
+
+  return {
+    ok: true,
+    updatedAt: new Date().toISOString(),
+    skills
+  };
+}
+
+function restoredSkillPayload(skillDir) {
+  const rootInfo = discoverSkillRoots().find((item) => directChildOf(skillDir, item.path));
+  const skillFile = path.join(skillDir, "SKILL.md");
+  const meta = readSkillMeta(skillFile);
+  const name = meta.name || path.basename(skillDir);
+  const desc = compactDescription(meta.description, name) || "本地安装的 skill。";
+  const source = sourceForSkill(skillDir, name, rootInfo);
+
+  return {
+    category: categoryForSkill(skillDir, name, desc),
+    name,
+    folder: folderLabel(skillDir, rootInfo),
+    platform: rootInfo?.platform || "Codex",
+    source,
+    status: source === "自制" ? "本地安装" : "无远端",
+    githubUrl: githubUrlForRepo(gitRootFor(skillDir)) || undefined,
+    deletable: isDeletableSkillDir(skillDir),
+    desc,
+    path: skillDir
+  };
+}
+
+function restoreFromTrash(trashPath) {
+  const normalized = path.resolve(trashPath || "");
+  if (!directChildOf(normalized, trashRoot) || !fs.existsSync(path.join(normalized, "SKILL.md"))) {
+    return {
+      ok: false,
+      message: "回收站中没有找到这个 skill"
+    };
+  }
+
+  const trashItem = trashItemForDir(normalized);
+  const target = path.resolve(trashItem?.originalPath || "");
+  if (!target) {
+    return {
+      ok: false,
+      message: "缺少原安装路径，无法恢复"
+    };
+  }
+  if (fs.existsSync(target)) {
+    return {
+      ok: false,
+      message: "原路径已存在同名 skill，无法自动恢复"
+    };
+  }
+
+  fs.mkdirSync(path.dirname(target), { recursive: true });
   try {
     fs.renameSync(normalized, target);
   } catch (error) {
@@ -579,7 +757,8 @@ function moveToTrash(skillDir) {
 
   return {
     ok: true,
-    message: `已移到备份目录：${target}`
+    message: "已恢复到原安装目录",
+    skill: restoredSkillPayload(target)
   };
 }
 
@@ -705,9 +884,27 @@ function createServer() {
 
   if (req.method === "GET" && url.pathname === "/api/skills") {
     try {
-      send(res, 200, JSON.stringify(scanSkills()), mime[".json"]);
+      const result = scanSkills();
+      writeSkillsCache(result);
+      send(res, 200, JSON.stringify(result), mime[".json"]);
     } catch (error) {
       send(res, 500, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
+    }
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/skills-cache") {
+    send(res, 200, JSON.stringify(readSkillsCache()), mime[".json"]);
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/skills-cache") {
+    try {
+      const body = await readJson(req);
+      writeSkillsCache(body);
+      send(res, 200, JSON.stringify({ ok: true }), mime[".json"]);
+    } catch (error) {
+      send(res, 400, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
     }
     return;
   }
@@ -752,6 +949,26 @@ function createServer() {
       const body = await readJson(req);
       const result = moveToTrash(body.path);
       send(res, result.ok ? 200 : 403, JSON.stringify(result), mime[".json"]);
+    } catch (error) {
+      send(res, 400, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
+    }
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname === "/api/trash") {
+    try {
+      send(res, 200, JSON.stringify(listTrashSkills()), mime[".json"]);
+    } catch (error) {
+      send(res, 500, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
+    }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/restore") {
+    try {
+      const body = await readJson(req);
+      const result = restoreFromTrash(body.path);
+      send(res, result.ok ? 200 : 400, JSON.stringify(result), mime[".json"]);
     } catch (error) {
       send(res, 400, JSON.stringify({ ok: false, message: error.message }), mime[".json"]);
     }

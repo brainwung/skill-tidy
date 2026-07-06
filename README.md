@@ -13,7 +13,7 @@
 
 ## 安装
 
-前往 GitHub Releases 下载最新的 `Skill Tidy-0.1.0-arm64.dmg`，打开后将应用拖入 Applications。
+前往 GitHub Releases 下载最新的 `Skill Tidy-0.1.5-arm64.dmg`，打开后将应用拖入 Applications。
 
 > 当前版本未做 Apple 签名，首次打开时 macOS 可能会提示安全风险。可以在系统设置中允许打开。
 

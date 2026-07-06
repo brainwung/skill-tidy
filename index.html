@@ -56,7 +56,7 @@
       grid-template-columns: var(--sidebar) minmax(0, 1fr);
       grid-template-rows: 30px minmax(0, 1fr);
       column-gap: 30px;
-      row-gap: 18px;
+      row-gap: 24px;
       width: min(100vw, var(--container));
       height: min(100vh, 678px);
       min-height: 0;
@@ -67,15 +67,9 @@
       -webkit-app-region: drag;
     }
 
-    .app-logo {
-      display: block;
-      grid-column: 1 / -1;
-      width: 93px;
-      height: 30px;
-      object-fit: contain;
-    }
-
     .sidebar {
+      grid-column: 1;
+      grid-row: 2;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -83,14 +77,14 @@
       min-height: 0;
       padding: 18px;
       overflow: hidden;
-      border-radius: 10px;
+      border-radius: 12px;
       background: #ffffff;
       -webkit-app-region: no-drag;
     }
 
     .mode-nav {
       display: grid;
-      gap: 12px;
+      gap: 18px;
     }
 
     .mode-item {
@@ -104,7 +98,7 @@
       border-radius: 6px;
       color: #333333;
       background: transparent;
-      font-size: 14px;
+      font-size: 15px;
       font-weight: 500;
       line-height: 1.2;
       text-align: left;
@@ -179,6 +173,11 @@
       mask-image: url("./icon/wode.svg");
     }
 
+    .mode-item[data-mode="trash"] .mode-icon::before {
+      -webkit-mask-image: url("./icon/bin.svg");
+      mask-image: url("./icon/bin.svg");
+    }
+
     .mode-item[data-mode="settings"] .mode-icon::before {
       -webkit-mask-image: url("./icon/set.svg");
       mask-image: url("./icon/set.svg");
@@ -206,17 +205,69 @@
     }
 
     .sidebar-version {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      width: fit-content;
+      padding: 0;
+      border: 0;
       color: #999999;
-      font-size: 12px;
+      background: transparent;
+      font-size: 11px;
       font-weight: 400;
+      line-height: 1.2;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .sidebar-version:hover,
+    .sidebar-version.is-active {
+      color: #666666;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 16px;
+      padding: 0 5px;
+      border-radius: 8px;
+      color: #e62828;
+      background: #ffeded;
+      font-size: 10px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+
+    .version-badge[hidden] {
+      display: none;
+    }
+
+    .sidebar-version:hover .version-badge,
+    .sidebar-version.is-active .version-badge {
+      color: #ffffff;
+      background: #e62828;
     }
 
     .main-pane {
+      grid-column: 2;
+      grid-row: 2;
       display: flex;
       flex-direction: column;
       min-width: 0;
       min-height: 0;
       overflow: hidden;
+      -webkit-app-region: no-drag;
+    }
+
+    .app-actions {
+      grid-column: 2;
+      grid-row: 1;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 18px;
+      min-width: 0;
       -webkit-app-region: no-drag;
     }
 
@@ -234,11 +285,15 @@
     .filter-bar {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 30px;
+      justify-content: flex-start;
+      gap: 0;
       flex: 0 0 auto;
+      width: 100%;
+      min-width: 0;
+      max-width: 100%;
       min-height: 30px;
       margin-bottom: 18px;
+      overflow: hidden;
     }
 
     .filter-bar.is-hidden {
@@ -248,9 +303,15 @@
     .filter-tabs {
       display: flex;
       align-items: center;
+      flex: 1 1 auto;
       gap: 6px;
+      width: 100%;
       min-width: 0;
+      max-width: 100%;
       overflow-x: auto;
+      overflow-y: hidden;
+      overscroll-behavior-inline: contain;
+      -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
     }
 
@@ -295,13 +356,6 @@
 
     .filter-tab.is-active {
       background: #ffffff;
-    }
-
-    .filter-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex: 0 0 auto;
     }
 
     .note {
@@ -380,6 +434,14 @@
       cursor: wait;
     }
 
+    .refresh-list-btn:disabled {
+      color: #999999;
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.5);
+      cursor: default;
+      opacity: 0.72;
+    }
+
     .stats {
       display: none;
     }
@@ -406,6 +468,314 @@
 
     #sections {
       min-height: 100%;
+    }
+
+    .state-panel,
+    .trash-panel,
+    .changelog-panel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 570px;
+      min-height: 0;
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .changelog-panel {
+      align-items: flex-start;
+      justify-content: flex-start;
+      padding: 30px;
+      overflow-y: auto;
+      scrollbar-color: #cccccc transparent;
+      scrollbar-width: thin;
+    }
+
+    .changelog-panel::-webkit-scrollbar,
+    .settings-card::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .changelog-panel::-webkit-scrollbar-thumb,
+    .settings-card::-webkit-scrollbar-thumb {
+      border-radius: 999px;
+      background: #cccccc;
+    }
+
+    .changelog-panel::-webkit-scrollbar-track,
+    .settings-card::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .changelog-content {
+      width: 100%;
+    }
+
+    .changelog-title {
+      margin: 0 0 6px;
+      color: #333333;
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .changelog-subtitle {
+      margin: 0 0 30px;
+      color: #999999;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .changelog-list {
+      display: grid;
+      gap: 24px;
+    }
+
+    .changelog-item {
+      display: grid;
+      grid-template-columns: 108px minmax(0, 1fr);
+      gap: 18px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .changelog-item:last-child {
+      border-bottom: 0;
+    }
+
+    .changelog-version {
+      display: grid;
+      align-content: start;
+      gap: 6px;
+    }
+
+    .changelog-version strong {
+      color: #333333;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .changelog-version span {
+      color: #999999;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .changelog-update-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 78px;
+      height: 30px;
+      margin-top: 12px;
+      border: 1px solid rgba(62, 76, 196, 0.3);
+      border-radius: 6px;
+      color: #3e4cc4;
+      background: #f6f7ff;
+      font-size: 12px;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .changelog-update-btn:hover {
+      border-color: rgba(62, 76, 196, 0.5);
+      background: #eef0ff;
+    }
+
+    .changelog-points {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      color: #666666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .changelog-points li {
+      position: relative;
+      padding-left: 12px;
+    }
+
+    .changelog-points li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 9px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: #666de2;
+    }
+
+    .state-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+      width: min(100%, 360px);
+      text-align: center;
+    }
+
+    .state-copy {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+    }
+
+    .state-illustration {
+      display: block;
+      width: 150px;
+      height: 158px;
+      object-fit: contain;
+    }
+
+    .state-text {
+      margin: 0;
+      color: #333333;
+      font-size: 15px;
+      font-weight: 400;
+      line-height: 1.5;
+    }
+
+    .scan-primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 120px;
+      height: 40px;
+      border: 0;
+      border-radius: 6px;
+      color: #ffffff;
+      background: #5460cb;
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+    }
+
+    .scan-primary-btn:hover {
+      background: #4c57c4;
+    }
+
+    .radar-scan {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin-bottom: 18px;
+    }
+
+    .radar-scan::before,
+    .radar-scan::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .radar-scan::before {
+      z-index: 1;
+      border: 1px solid rgba(92, 108, 255, 0.28);
+      background:
+        linear-gradient(rgba(92, 108, 255, 0.24), rgba(92, 108, 255, 0.24)) 0 50% / 100% 1px no-repeat,
+        linear-gradient(90deg, rgba(92, 108, 255, 0.24), rgba(92, 108, 255, 0.24)) 50% 0 / 1px 100% no-repeat,
+        radial-gradient(circle at center,
+          transparent 0 22px,
+          rgba(92, 108, 255, 0.24) 23px,
+          transparent 24px 48px,
+          rgba(92, 108, 255, 0.24) 49px,
+          transparent 50px 74px,
+          rgba(84, 96, 203, 0.5) 75px);
+    }
+
+    .radar-scan::after {
+      z-index: 2;
+      transform-origin: 50% 50%;
+      background:
+        conic-gradient(from 180deg,
+          rgba(84, 96, 203, 0) 0deg,
+          rgba(84, 96, 203, 0) 180deg,
+          rgba(96, 112, 255, 0.42) 360deg),
+        linear-gradient(180deg, transparent 0 50%, #5c6cff 50% 100%) 50% 50% / 2px 100% no-repeat;
+      animation: scanSpin 1.9s linear infinite;
+    }
+
+    .radar-dot {
+      position: absolute;
+      z-index: 3;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #5c6cff;
+      box-shadow: 0 0 0 0 rgba(92, 108, 255, 0.32);
+      opacity: 0.62;
+      animation: radarBlink 1.65s ease-in-out infinite;
+    }
+
+    .radar-dot.is-large {
+      width: 9px;
+      height: 9px;
+      background: #5c6cff;
+    }
+
+    .radar-dot.is-large::before {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border-radius: 50%;
+      background: rgba(92, 108, 255, 0.16);
+      opacity: 0.5;
+    }
+
+    .radar-dot.medium {
+      width: 7px;
+      height: 7px;
+    }
+
+    .radar-dot.one {
+      left: 35px;
+      top: 11px;
+      animation-delay: 0s;
+    }
+
+    .radar-dot.two {
+      right: 33px;
+      top: 72px;
+      animation-delay: 0.42s;
+    }
+
+    .radar-dot.three {
+      left: 26px;
+      bottom: 30px;
+      animation-delay: 0.84s;
+    }
+
+    @keyframes scanSpin {
+      0% {
+        transform: rotate(0deg);
+      }
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes radarBlink {
+      0%,
+      100% {
+        opacity: 0.42;
+        transform: scale(0.86);
+        box-shadow: 0 0 0 0 rgba(92, 108, 255, 0);
+      }
+      46% {
+        opacity: 1;
+        transform: scale(1.12);
+        box-shadow: 0 0 0 7px rgba(92, 108, 255, 0.12);
+      }
     }
 
     .section {
@@ -682,16 +1052,23 @@
     }
 
     .settings-panel {
-      display: grid;
-      gap: 18px;
-      min-height: 100%;
+      display: block;
+      height: 570px;
+      min-height: 0;
       padding: 0;
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
     }
 
     .settings-card {
-      padding: 24px;
-      border-radius: 8px;
-      background: #ffffff;
+      height: 100%;
+      padding: 30px;
+      overflow-y: auto;
+      border-radius: 0;
+      background: transparent;
+      scrollbar-color: #cccccc transparent;
+      scrollbar-width: thin;
     }
 
     .settings-head {
@@ -1012,14 +1389,18 @@
 <body>
   <main class="workspace">
     <section class="app-frame" aria-label="Skill Tidy">
-      <img class="app-logo" src="./icon/logo-small.png" alt="Skill Tidy">
+      <div class="app-actions" aria-label="全局操作">
+        <p class="note" id="updatedAt"></p>
+        <button class="refresh-list-btn" id="updateAll" type="button" disabled>一键更新</button>
+        <button class="refresh-list-btn" id="refreshList" type="button">刷新</button>
+      </div>
       <aside class="sidebar">
         <nav class="mode-nav" id="modeNav" aria-label="Skill 筛选类型">
           <button class="mode-item is-active" type="button" data-mode="category">
             <span class="mode-icon" aria-hidden="true">
               <img src="./icon/leixing.svg" alt="">
             </span>
-            <span>技能类型</span>
+            <span>skill类型</span>
           </button>
           <button class="mode-item" type="button" data-mode="platform">
             <span class="mode-icon" aria-hidden="true">
@@ -1037,9 +1418,15 @@
             <span class="mode-icon" aria-hidden="true">
               <img src="./icon/wode.svg" alt="">
             </span>
-            <span>我的 Skill</span>
+            <span>我的skill</span>
           </button>
           <div class="mode-separator" aria-hidden="true"></div>
+          <button class="mode-item" type="button" data-mode="trash">
+            <span class="mode-icon" aria-hidden="true">
+              <img src="./icon/bin.svg" alt="">
+            </span>
+            <span>回收站</span>
+          </button>
           <button class="mode-item" type="button" data-mode="settings">
             <span class="mode-icon" aria-hidden="true">
               <img src="./icon/set.svg" alt="">
@@ -1049,17 +1436,16 @@
         </nav>
         <div class="sidebar-footer" aria-label="应用信息">
           <div class="sidebar-owner">Brain Wung</div>
-          <div class="sidebar-version">Version 0.1.0</div>
+          <button class="sidebar-version" type="button" id="showChangelog" aria-label="查看更新日志">
+            <span id="sidebarVersionText">Version 0.1.5</span>
+            <span class="version-badge" id="sidebarVersionBadge" hidden>NEW</span>
+          </button>
         </div>
       </aside>
 
       <section class="main-pane" id="top">
         <header class="filter-bar">
           <div class="filter-tabs" id="filterTabs" aria-label="筛选项"></div>
-          <div class="filter-actions">
-            <p class="note" id="updatedAt">更新时间：2026-07-03</p>
-            <button class="refresh-list-btn" id="refreshList" type="button">刷新</button>
-          </div>
         </header>
 
         <section class="top">
@@ -1561,9 +1947,21 @@
 
     let activeMode = "category";
     let activeFilter = "all";
+    let scanState = "initial";
+    let scanProgress = 10;
+    let scanProgressTimer = null;
     let settingsRoots = [];
     let settingsLoaded = false;
-    const skillsCacheKey = "skill-tidy.skills-cache.v1";
+    let hasSkillData = false;
+    let trashSkills = [];
+    let trashLoaded = false;
+    const appUpdate = {
+      currentVersion: "0.1.5",
+      latestVersion: "0.1.5",
+      available: false,
+      releaseUrl: "https://github.com/brainwung/skill-tidy/releases/latest",
+      apiUrl: "https://api.github.com/repos/brainwung/skill-tidy/releases/latest"
+    };
 
     function escapeHtml(value) {
       return String(value).replace(/[&<>"']/g, (char) => ({
@@ -1629,14 +2027,14 @@
     }
 
     function baseSkillsForMode() {
-      if (activeMode === "settings") return [];
+      if (activeMode === "settings" || activeMode === "trash" || activeMode === "changelog") return [];
       return activeMode === "mine"
         ? skills.filter((item) => item.source === "自制")
         : skills;
     }
 
     function filterOptions() {
-      if (activeMode === "settings") return [];
+      if (activeMode === "settings" || activeMode === "trash" || activeMode === "changelog" || scanState !== "ready") return [];
       if (activeMode === "platform") return platformOptions();
       if (activeMode === "source") return sourceOptions();
       return categoryOptions(baseSkillsForMode());
@@ -1668,16 +2066,59 @@
       document.querySelectorAll("#modeNav .mode-item").forEach((item) => {
         item.classList.toggle("is-active", item.dataset.mode === activeMode);
       });
+      document.getElementById("showChangelog")?.classList.toggle("is-active", activeMode === "changelog");
+    }
+
+    function renderAppUpdateStatus() {
+      const versionText = document.getElementById("sidebarVersionText");
+      const badge = document.getElementById("sidebarVersionBadge");
+      if (versionText) versionText.textContent = `Version ${appUpdate.currentVersion}`;
+      if (badge) badge.hidden = !appUpdate.available;
+    }
+
+    function normalizeVersion(value) {
+      return String(value || "").trim().replace(/^v/i, "");
+    }
+
+    function compareVersions(a, b) {
+      const left = normalizeVersion(a).split(".").map((part) => Number(part) || 0);
+      const right = normalizeVersion(b).split(".").map((part) => Number(part) || 0);
+      const length = Math.max(left.length, right.length);
+      for (let index = 0; index < length; index += 1) {
+        const diff = (left[index] || 0) - (right[index] || 0);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    }
+
+    async function checkAppUpdate() {
+      try {
+        const response = await fetch(appUpdate.apiUrl, { cache: "no-store" });
+        if (!response.ok) return;
+        const result = await response.json();
+        const latest = normalizeVersion(result.tag_name || result.name || "");
+        if (!latest) return;
+        if (compareVersions(latest, appUpdate.currentVersion) > 0) {
+          appUpdate.latestVersion = latest;
+          appUpdate.releaseUrl = result.html_url || appUpdate.releaseUrl;
+          appUpdate.available = true;
+        }
+        renderAppUpdateStatus();
+        if (activeMode === "changelog") renderChangelog();
+      } catch (error) {
+        // Offline or GitHub API failures should not affect local skill management.
+      }
     }
 
     function renderFilterTabs() {
       const filterBar = document.querySelector(".filter-bar");
+      const tabs = document.getElementById("filterTabs");
       if (filterBar) {
-        filterBar.classList.toggle("is-hidden", activeMode === "settings");
+        filterBar.classList.toggle("is-hidden", activeMode === "settings" || activeMode === "trash" || activeMode === "changelog" || scanState !== "ready");
       }
 
-      if (activeMode === "settings") {
-        document.getElementById("filterTabs").innerHTML = "";
+      if (activeMode === "settings" || activeMode === "trash" || activeMode === "changelog" || scanState !== "ready") {
+        tabs.innerHTML = "";
         return;
       }
       syncActiveFilter();
@@ -1687,7 +2128,171 @@
         const label = escapeHtml(item.label);
         return `<button class="filter-tab${activeClass}" type="button" data-filter="${escapeHtml(item.value)}" data-label="${label}"><span>${label}</span></button>`;
       }).join("");
-      document.getElementById("filterTabs").innerHTML = html;
+      tabs.innerHTML = html;
+      keepActiveTabVisible("nearest");
+    }
+
+    function keepActiveTabVisible(inline = "center") {
+      window.requestAnimationFrame(() => {
+        const activeTab = document.querySelector("#filterTabs .filter-tab.is-active");
+        if (!activeTab) return;
+        activeTab.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline
+        });
+      });
+    }
+
+    function updateGlobalActions() {
+      const updateAllButton = document.getElementById("updateAll");
+      const refreshButton = document.getElementById("refreshList");
+      if (!updateAllButton || !refreshButton) return;
+
+      const updatableCount = skills.filter((item) => String(item.status || "").startsWith("可更新") && item.command).length;
+      updateAllButton.hidden = activeMode === "trash";
+      updateAllButton.disabled = scanState !== "ready" || updatableCount === 0;
+      updateAllButton.textContent = "一键更新";
+      refreshButton.disabled = scanState === "scanning";
+    }
+
+    function startScanProgress() {
+      stopScanProgress();
+      scanProgress = 10;
+      scanProgressTimer = window.setInterval(() => {
+        if (scanState !== "scanning") {
+          stopScanProgress();
+          return;
+        }
+        scanProgress = Math.min(scanProgress + 7, 92);
+        const text = document.getElementById("scanProgressText");
+        if (text) text.textContent = `扫描中 ${scanProgress}%`;
+      }, 520);
+    }
+
+    function stopScanProgress() {
+      if (scanProgressTimer) {
+        window.clearInterval(scanProgressTimer);
+        scanProgressTimer = null;
+      }
+    }
+
+    function statePanelMarkup(kind) {
+      if (kind === "scanning") {
+        return `
+          <section class="state-panel" aria-label="扫描中">
+            <div class="state-content">
+              <div class="state-copy">
+                <div class="radar-scan" aria-hidden="true">
+                  <span class="radar-dot is-large one"></span>
+                  <span class="radar-dot medium two"></span>
+                  <span class="radar-dot three"></span>
+                </div>
+                <p class="state-text" id="scanProgressText">扫描中 ${scanProgress}%</p>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      if (kind === "empty") {
+        return `
+          <section class="state-panel" aria-label="空状态">
+            <div class="state-content">
+              <div class="state-copy">
+                <img class="state-illustration" src="./icon/空状态.png" alt="">
+                <p class="state-text">您的电脑中尚未安装任何skill</p>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      return `
+        <section class="state-panel" aria-label="初始状态">
+          <div class="state-content">
+            <div class="state-copy">
+              <img class="state-illustration" src="./icon/初始状态.png" alt="">
+              <p class="state-text">skill tidy帮您轻松管理Agent skill</p>
+            </div>
+            <button class="scan-primary-btn" type="button" id="startScan">一键扫描</button>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderStatePanel(kind = scanState) {
+      renderModeNav();
+      renderFilterTabs();
+      document.getElementById("sections").innerHTML = statePanelMarkup(kind);
+      renderStats();
+      updateGlobalActions();
+    }
+
+    function renderTrash() {
+      renderModeNav();
+      renderFilterTabs();
+
+      if (!trashLoaded) {
+        document.getElementById("sections").innerHTML = `
+          <section class="trash-panel" aria-label="回收站">
+            <div class="state-content">
+              <div class="state-copy">
+                <p class="state-text">正在读取回收站</p>
+              </div>
+            </div>
+          </section>
+        `;
+        renderStats();
+        updateGlobalActions();
+        return;
+      }
+
+      const html = trashSkills.length
+        ? `<div class="skill-grid">${trashSkills.map(trashCardMarkup).join("")}</div>`
+        : `
+          <section class="trash-panel" aria-label="回收站">
+            <div class="state-content">
+              <div class="state-copy">
+                <img class="state-illustration" src="./icon/空状态.png" alt="">
+                <p class="state-text">回收站暂无内容</p>
+              </div>
+            </div>
+          </section>
+        `;
+
+      document.getElementById("sections").innerHTML = html;
+      renderStats();
+      updateGlobalActions();
+    }
+
+    function renderChangelog() {
+      renderModeNav();
+      renderFilterTabs();
+      document.getElementById("sections").innerHTML = `
+        <section class="changelog-panel" aria-label="更新日志">
+          <div class="changelog-content">
+            <h2 class="changelog-title">更新日志</h2>
+            <p class="changelog-subtitle">Skill Tidy 的主要功能调整记录。</p>
+            <div class="changelog-list">
+              <article class="changelog-item">
+                <div class="changelog-version">
+                  <strong>Version ${escapeHtml(appUpdate.currentVersion)}</strong>
+                  <span>${appUpdate.available ? `发现新版本 ${escapeHtml(appUpdate.latestVersion)}` : "当前版本"}</span>
+                  ${appUpdate.available ? `<button class="changelog-update-btn" type="button" id="appUpdateNow">立即更新</button>` : ""}
+                </div>
+                <ul class="changelog-points">
+                  <li>首次使用由用户手动扫描，之后打开会优先读取上次缓存。</li>
+                  <li>全量扫描只在点击“一键扫描 / 刷新”时执行，更新和删除不再自动扫描。</li>
+                  <li>新增回收站与恢复能力，删除的 skill 可自动装回原目录。</li>
+                </ul>
+              </article>
+            </div>
+          </div>
+        </section>
+      `;
+      renderStats();
+      updateGlobalActions();
     }
 
     function renderSettingsLoading() {
@@ -1731,7 +2336,7 @@
             <div class="settings-head">
               <div>
                 <h2 class="settings-title">Skill 扫描目录</h2>
-                <p class="settings-desc">管理本机各 agent 的 skill 根目录，保存后会重新扫描列表。</p>
+                <p class="settings-desc">管理本机各 agent 的 skill 根目录，保存后可点击刷新更新列表。</p>
               </div>
               <button class="settings-btn primary" type="button" id="saveSettings">保存</button>
             </div>
@@ -1757,6 +2362,7 @@
         </section>
       `;
       renderStats();
+      updateGlobalActions();
     }
 
     function renderStats() {
@@ -1788,19 +2394,7 @@
     }
 
     function renderLoading() {
-      document.getElementById("sections").innerHTML = `
-        <div class="skill-grid">
-          <article class="skill-card">
-            <div class="skill-title">
-              <span class="skill-name">正在扫描</span>
-            </div>
-            <div class="tag-row">
-              <span class="status clean">请稍候</span>
-            </div>
-            <p class="desc">正在重新读取本机各个 agent 的 skill 目录。</p>
-          </article>
-        </div>
-      `;
+      renderStatePanel("scanning");
     }
 
     function cardMarkup(item) {
@@ -1841,9 +2435,49 @@
       `;
     }
 
+    function trashCardMarkup(item) {
+      const statusTag = `<span class="status clean">${escapeHtml(item.status || "已删除")}</span>`;
+      const restoreAction = item.restorable
+        ? `<button class="update-btn restore-btn" data-restore-path="${escapeHtml(item.path)}">恢复</button>`
+        : `<button class="update-btn" disabled>恢复</button>`;
+
+      return `
+        <article class="skill-card">
+          <div class="skill-title">
+            <span class="skill-name">${escapeHtml(item.name)}</span>
+            <a class="folder-link" href="${folderHref(item.path)}" target="_blank" data-path="${escapeHtml(item.path)}" title="打开备份文件夹：${escapeHtml(item.path)}">${folderIcon()}</a>
+          </div>
+          <div class="tag-row">
+            <span class="platform ${platformClass[item.platform || "Codex"] || ""}">${escapeHtml(item.platform || "Codex")}</span>
+            <span class="pill ${sourceClass[item.source] || ""}">${escapeHtml(item.source || "自制")}</span>
+            ${statusTag}
+          </div>
+          <p class="desc">${escapeHtml(item.desc)}</p>
+          <div class="card-actions">
+            ${restoreAction}
+          </div>
+        </article>
+      `;
+    }
+
     function render() {
+      if (activeMode === "changelog") {
+        renderChangelog();
+        return;
+      }
+
+      if (activeMode === "trash") {
+        renderTrash();
+        return;
+      }
+
       if (activeMode === "settings") {
         renderSettings();
+        return;
+      }
+
+      if (scanState !== "ready") {
+        renderStatePanel(scanState);
         return;
       }
 
@@ -1869,6 +2503,7 @@
 
       document.getElementById("sections").innerHTML = html;
       renderStats();
+      updateGlobalActions();
     }
 
     function bindScrollSpy() {
@@ -1888,11 +2523,18 @@
       showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 2200);
     }
 
-    function loadCachedSkills() {
+    async function loadCachedSkills() {
       try {
-        const cached = JSON.parse(localStorage.getItem(skillsCacheKey) || "null");
-        if (!cached || !Array.isArray(cached.skills)) return false;
+        if (location.protocol === "file:") {
+          return false;
+        }
+
+        const response = await fetch("/api/skills-cache", { cache: "no-store" });
+        const cached = await response.json();
+        if (!response.ok || !cached.ok || !cached.hasCache || !Array.isArray(cached.skills)) return false;
         skills = cached.skills;
+        hasSkillData = true;
+        scanState = skills.length ? "ready" : "empty";
         if (cached.updatedAt) renderUpdatedAt(cached.updatedAt);
         return true;
       } catch (error) {
@@ -1900,15 +2542,42 @@
       }
     }
 
-    function cacheSkills(result) {
+    async function cacheSkills(result) {
       try {
-        localStorage.setItem(skillsCacheKey, JSON.stringify({
-          skills: result.skills || [],
-          updatedAt: result.updatedAt || new Date().toISOString()
-        }));
+        if (location.protocol === "file:") return;
+        await fetch("/api/skills-cache", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            skills: result.skills || [],
+            updatedAt: result.updatedAt || new Date().toISOString()
+          })
+        });
       } catch (error) {
         // Ignore cache failures; the app can still render from the live scan.
       }
+    }
+
+    async function persistCurrentSkills() {
+      await cacheSkills({
+        skills,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    function markRepoUpdated(repo) {
+      let changed = false;
+      skills = skills.map((item) => {
+        const itemRepo = repoPathFromCommand(item.command);
+        if (itemRepo !== repo) return item;
+        changed = true;
+        return {
+          ...item,
+          status: "已是最新",
+          command: undefined
+        };
+      });
+      return changed;
     }
 
     function confirmDelete(name) {
@@ -1956,6 +2625,11 @@
         return;
       }
 
+      scanState = "scanning";
+      scanProgress = 10;
+      render();
+      startScanProgress();
+
       if (useButtonState) {
         button.classList.add("is-loading");
         button.disabled = true;
@@ -1968,8 +2642,10 @@
         if (!response.ok || !result.ok) {
           throw new Error(result.message || "刷新失败");
         }
-        skills = result.skills;
-        cacheSkills(result);
+        skills = result.skills || [];
+        hasSkillData = true;
+        scanState = skills.length ? "ready" : "empty";
+        await cacheSkills(result);
         render();
         renderUpdatedAt(result.updatedAt);
         bindScrollSpy();
@@ -1977,19 +2653,94 @@
           showToast("列表已刷新，新增和删除的 skill 已同步");
         }
       } catch (error) {
+        scanState = hasSkillData ? (skills.length ? "ready" : "empty") : "initial";
         if (!options.silent) {
           showToast(error.message || "刷新失败");
         }
-        if (options.fallback) {
-          render();
-          bindScrollSpy();
-        }
+        render();
+        bindScrollSpy();
       } finally {
+        stopScanProgress();
         if (useButtonState) {
           button.classList.remove("is-loading");
           button.disabled = false;
           button.textContent = "刷新";
         }
+        updateGlobalActions();
+      }
+    }
+
+    async function updateAllSkills() {
+      const button = document.getElementById("updateAll");
+      const targets = skills
+        .filter((item) => String(item.status || "").startsWith("可更新") && item.command)
+        .map((item) => ({ name: item.name, repo: repoPathFromCommand(item.command) }))
+        .filter((item) => item.repo);
+
+      if (!targets.length) {
+        showToast("当前没有可更新的 skill");
+        updateGlobalActions();
+        return;
+      }
+
+      if (location.protocol === "file:") {
+        showToast("需要通过本地服务打开，才能一键更新");
+        return;
+      }
+
+      button.disabled = true;
+      button.classList.add("is-loading");
+
+      try {
+        for (let index = 0; index < targets.length; index += 1) {
+          button.textContent = `更新中 ${index + 1}/${targets.length}`;
+          const response = await fetch("/api/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ repo: targets[index].repo })
+          });
+          const result = await response.json();
+          if (!response.ok || !result.ok) {
+            throw new Error(`${targets[index].name} 更新失败：${result.message || "未知错误"}`);
+          }
+          markRepoUpdated(targets[index].repo);
+        }
+        await persistCurrentSkills();
+        render();
+        showToast("可更新的 skill 已处理完成，可点击刷新重新检查");
+      } catch (error) {
+        showToast(error.message || "一键更新失败");
+      } finally {
+        button.classList.remove("is-loading");
+        updateGlobalActions();
+      }
+    }
+
+    async function loadTrash() {
+      if (location.protocol === "file:") {
+        showToast("需要通过本地服务打开，才能读取回收站");
+        trashLoaded = true;
+        trashSkills = [];
+        renderTrash();
+        return;
+      }
+
+      trashLoaded = false;
+      renderTrash();
+      try {
+        const response = await fetch("/api/trash", { cache: "no-store" });
+        const result = await response.json();
+        if (!response.ok || !result.ok) {
+          throw new Error(result.message || "读取回收站失败");
+        }
+        trashSkills = result.skills || [];
+        trashLoaded = true;
+        renderTrash();
+      } catch (error) {
+        showToast(error.message || "读取回收站失败");
+        trashSkills = [];
+        trashLoaded = true;
+        renderTrash();
       }
     }
 
@@ -2034,17 +2785,22 @@
           throw new Error(result.message || "保存失败");
         }
         settingsRoots = result.roots || [];
-        renderSettings();
-        await refreshSkills({ silent: true });
         activeMode = "settings";
         renderSettings();
-        showToast("目录设置已保存，列表已重新扫描");
+        showToast("目录设置已保存，需要更新列表时请点击刷新");
       } catch (error) {
         showToast(error.message || "保存失败");
       }
     }
 
     document.getElementById("refreshList").addEventListener("click", () => refreshSkills());
+    document.getElementById("updateAll").addEventListener("click", () => updateAllSkills());
+    document.getElementById("showChangelog").addEventListener("click", () => {
+      activeMode = "changelog";
+      activeFilter = "all";
+      render();
+      scrollCardsToTop();
+    });
 
     document.getElementById("modeNav").addEventListener("click", (event) => {
       const button = event.target.closest(".mode-item[data-mode]");
@@ -2055,6 +2811,11 @@
         renderModeNav();
         renderFilterTabs();
         loadSettings();
+        scrollCardsToTop();
+        return;
+      }
+      if (activeMode === "trash") {
+        loadTrash();
         scrollCardsToTop();
         return;
       }
@@ -2069,8 +2830,17 @@
       activeFilter = button.dataset.filter || "all";
       render();
       bindScrollSpy();
+      keepActiveTabVisible("center");
       scrollCardsToTop();
     });
+
+    document.getElementById("filterTabs").addEventListener("wheel", (event) => {
+      const tabs = event.currentTarget;
+      if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+      if (tabs.scrollWidth <= tabs.clientWidth) return;
+      event.preventDefault();
+      tabs.scrollLeft += event.deltaY;
+    }, { passive: false });
 
     document.addEventListener("click", async (event) => {
       const folderLink = event.target.closest(".folder-link[data-path]");
@@ -2090,6 +2860,20 @@
           }
         } catch (error) {
           showToast(error.message || "打开失败");
+        }
+        return;
+      }
+
+      const startScanButton = event.target.closest("#startScan");
+      if (startScanButton) {
+        refreshSkills();
+        return;
+      }
+
+      const appUpdateButton = event.target.closest("#appUpdateNow");
+      if (appUpdateButton) {
+        if (appUpdate.available) {
+          window.open(appUpdate.releaseUrl, "_blank", "noopener");
         }
         return;
       }
@@ -2152,6 +2936,50 @@
         return;
       }
 
+      const restoreButton = event.target.closest(".restore-btn[data-restore-path]");
+      if (restoreButton) {
+        if (location.protocol === "file:") {
+          showToast("需要通过本地服务打开，才能恢复 skill");
+          return;
+        }
+
+        restoreButton.classList.add("is-loading");
+        restoreButton.disabled = true;
+        restoreButton.textContent = "恢复中";
+
+        try {
+          const response = await fetch("/api/restore", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ path: restoreButton.dataset.restorePath })
+          });
+          const result = await response.json();
+          if (!response.ok || !result.ok) {
+            throw new Error(result.message || "恢复失败");
+          }
+
+          trashSkills = trashSkills.filter((item) => item.path !== restoreButton.dataset.restorePath);
+          if (result.skill) {
+            skills = [
+              ...skills.filter((item) => item.path !== result.skill.path),
+              result.skill
+            ];
+            hasSkillData = true;
+            scanState = "ready";
+            await persistCurrentSkills();
+          }
+          showToast("已恢复到原安装目录");
+          renderTrash();
+        } catch (error) {
+          showToast(error.message || "恢复失败");
+          restoreButton.disabled = false;
+          restoreButton.textContent = "恢复";
+        } finally {
+          restoreButton.classList.remove("is-loading");
+        }
+        return;
+      }
+
       const card = event.target.closest(".skill-card[data-github-url]");
       if (card && !event.target.closest("a, button")) {
         window.open(card.dataset.githubUrl, "_blank", "noopener");
@@ -2184,7 +3012,11 @@
             throw new Error(result.message || "删除失败");
           }
           showToast("已删除并移动到备份目录");
-          refreshSkills({ silent: true });
+          skills = skills.filter((item) => item.path !== deleteButton.dataset.path);
+          trashLoaded = false;
+          scanState = skills.length ? "ready" : "empty";
+          await persistCurrentSkills();
+          render();
         } catch (error) {
           showToast(error.message || "删除失败");
           deleteButton.disabled = false;
@@ -2225,8 +3057,9 @@
           throw new Error(result.message || "更新失败");
         }
         showToast(result.message || "更新完成");
-        button.textContent = "已更新";
-        refreshSkills({ silent: true });
+        markRepoUpdated(repo);
+        await persistCurrentSkills();
+        render();
       } catch (error) {
         showToast(error.message || "更新失败");
         button.disabled = false;
@@ -2245,15 +3078,15 @@
       settingsRoots[index].enabled = toggle.checked;
     });
 
-    if (location.protocol !== "file:") {
-      loadCachedSkills();
+    renderAppUpdateStatus();
+    loadCachedSkills().then((loaded) => {
+      if (!loaded) {
+        scanState = "initial";
+      }
       render();
       bindScrollSpy();
-      refreshSkills({ silent: true, background: true });
-    } else {
-      render();
-      bindScrollSpy();
-    }
+    });
+    checkAppUpdate();
   </script>
 </body>
 </html>
