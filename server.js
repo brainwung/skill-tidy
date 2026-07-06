@@ -13,13 +13,6 @@ const configPath = process.env.SKILL_TIDY_CONFIG ||
 const skillsCachePath = process.env.SKILL_TIDY_CACHE ||
   path.join(appSupportDir, "skill-tidy", "skills-cache.json");
 
-const allowedRepos = new Set([
-  "/Users/brainwung/.agents/skills/_taste-skill-repo",
-  "/Users/brainwung/.agents/skills/feed-cards",
-  "/Users/brainwung/.agents/skills/product-skill",
-  "/Users/brainwung/.agents/skills/guizang-ppt-skill"
-]);
-
 const defaultSkillRootCandidates = [
   { path: path.join(homeDir, ".codex", "skills"), platform: "Codex", deletable: true },
   { path: path.join(homeDir, ".agents", "skills"), platform: "Codex", deletable: true },
@@ -316,9 +309,33 @@ function readJson(req) {
 
 function runGit(repo) {
   return new Promise((resolve) => {
+    const dirty = runGitSync(["status", "--short"], repo, 10000);
+    if (dirty) {
+      const changedFiles = dirty
+        .split(/\r?\n/)
+        .filter(Boolean)
+        .slice(0, 5)
+        .map((line) => line.replace(/^\s*[AMDRCU?!]{1,2}\s+/, ""))
+        .join("、");
+
+      resolve({
+        ok: false,
+        message: `这个 skill 仓库有本地改动，为避免覆盖已停止更新。请先处理本地改动后再更新${changedFiles ? `：${changedFiles}` : "。"}`
+      });
+      return;
+    }
+
     execFile("git", ["pull", "--ff-only"], { cwd: repo, timeout: 120000 }, (error, stdout, stderr) => {
       const output = `${stdout || ""}${stderr || ""}`.trim();
       if (error) {
+        if (/local changes.*would be overwritten|Please commit your changes or stash/i.test(output)) {
+          resolve({
+            ok: false,
+            message: "这个 skill 仓库有本地改动，为避免覆盖已停止更新。请先处理本地改动后再更新。"
+          });
+          return;
+        }
+
         resolve({
           ok: false,
           message: output || error.message
@@ -571,12 +588,22 @@ function directChildOf(child, parent) {
   return relative && !relative.startsWith("..") && !path.isAbsolute(relative) && !relative.includes(path.sep);
 }
 
+function insideRoot(child, parent) {
+  const relative = path.relative(parent, child);
+  return !relative || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+function rootForPath(targetPath, predicate = () => true) {
+  const normalized = path.resolve(targetPath || "");
+  return discoverSkillRoots().find((item) => predicate(item) && insideRoot(normalized, item.path));
+}
+
 function isDeletableSkillDir(skillDir) {
   const normalized = path.resolve(skillDir || "");
-  const rootInfo = discoverSkillRoots().find((item) => item.deletable && directChildOf(normalized, item.path));
+  const rootInfo = rootForPath(normalized, (item) => item.deletable && !item.builtin);
 
   if (!fs.existsSync(path.join(normalized, "SKILL.md"))) return false;
-  if (!rootInfo || isBuiltInPath(normalized, rootInfo)) return false;
+  if (!rootInfo) return false;
 
   return true;
 }
@@ -606,7 +633,7 @@ function moveToTrash(skillDir) {
 
   fs.mkdirSync(trashRoot, { recursive: true });
   const target = uniqueTrashPath(normalized);
-  const rootInfo = discoverSkillRoots().find((item) => directChildOf(normalized, item.path));
+  const rootInfo = rootForPath(normalized);
   const meta = readSkillMeta(path.join(normalized, "SKILL.md"));
   const name = meta.name || path.basename(normalized);
   const desc = compactDescription(meta.description, name) || "本地安装的 skill。";
@@ -701,7 +728,7 @@ function listTrashSkills() {
 }
 
 function restoredSkillPayload(skillDir) {
-  const rootInfo = discoverSkillRoots().find((item) => directChildOf(skillDir, item.path));
+  const rootInfo = rootForPath(skillDir);
   const skillFile = path.join(skillDir, "SKILL.md");
   const meta = readSkillMeta(skillFile);
   const name = meta.name || path.basename(skillDir);
@@ -812,12 +839,7 @@ function dedupeSkills(items) {
 
 function isAllowedRepo(repo) {
   const normalized = path.resolve(repo || "");
-  if (allowedRepos.has(normalized)) return true;
-  const roots = discoverSkillRoots();
-  const rootInfo = roots.find((item) => !item.builtin && (
-    directChildOf(normalized, item.path) ||
-    normalized === item.path
-  ));
+  const rootInfo = rootForPath(normalized, (item) => !item.builtin);
   if (!rootInfo) return false;
   if (!fs.existsSync(normalized)) return false;
   return Boolean(runGitSync(["remote"], normalized, 10000));

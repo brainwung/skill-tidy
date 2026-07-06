@@ -2235,7 +2235,10 @@
       const refreshButton = document.getElementById("refreshList");
       if (!updateAllButton || !refreshButton) return;
 
-      const updatableCount = skills.filter((item) => String(item.status || "").startsWith("可更新") && item.command).length;
+      const updatableCount = skills.filter((item) => {
+        const status = String(item.status || "");
+        return status.startsWith("可更新") && !status.includes("本地有改动") && item.command;
+      }).length;
       updateAllButton.hidden = activeMode === "trash";
       updateAllButton.disabled = scanState !== "ready" || updatableCount === 0;
       updateAllButton.textContent = "一键更新";
@@ -2485,6 +2488,7 @@
 
     function cardMarkup(item) {
       const hasUpdate = item.status.startsWith("可更新");
+      const blockedByLocalChanges = hasUpdate && item.status.includes("本地有改动");
       const statusTag = item.status === item.source
         ? ""
         : `<span class="status ${hasUpdate ? "update" : "clean"}">${escapeHtml(item.status)}</span>`;
@@ -2494,7 +2498,9 @@
       const cardAttrs = githubUrl
         ? ` data-github-url="${escapeHtml(githubUrl)}" title="打开 GitHub 仓库"`
         : "";
-      const action = hasUpdate
+      const action = blockedByLocalChanges
+        ? `<button class="update-btn" disabled title="请先处理本地改动">更新</button>`
+        : hasUpdate
         ? `<button class="update-btn" data-command="${escapeHtml(item.command)}" data-repo="${escapeHtml(repoPath)}">更新</button>`
         : `<button class="update-btn" disabled>更新</button>`;
       const deleteAction = item.deletable
@@ -2703,23 +2709,31 @@
       });
     }
 
+    function skillIdentityKey(item) {
+      return item.path || `${item.platform || ""}|${item.name || ""}|${item.folder || ""}`;
+    }
+
     async function refreshSkills(options = {}) {
       const button = document.getElementById("refreshList");
       const useButtonState = !options.background;
+      const showScanPanel = Boolean(options.showScanPanel);
+      const previousKeys = new Set(skills.map(skillIdentityKey));
       if (location.protocol === "file:") {
         showToast("需要通过本地服务打开，才能重新扫描 skill 目录");
         return;
       }
 
-      scanState = "scanning";
-      scanProgress = 10;
-      render();
-      startScanProgress();
+      if (showScanPanel) {
+        scanState = "scanning";
+        scanProgress = 10;
+        render();
+        startScanProgress();
+      }
 
       if (useButtonState) {
         button.classList.add("is-loading");
         button.disabled = true;
-        button.textContent = "扫描中";
+        button.textContent = showScanPanel ? "扫描中" : "刷新中";
       }
 
       try {
@@ -2728,7 +2742,9 @@
         if (!response.ok || !result.ok) {
           throw new Error(result.message || "刷新失败");
         }
-        skills = result.skills || [];
+        const nextSkills = result.skills || [];
+        const addedCount = nextSkills.filter((item) => !previousKeys.has(skillIdentityKey(item))).length;
+        skills = nextSkills;
         hasSkillData = true;
         scanState = skills.length ? "ready" : "empty";
         await cacheSkills(result);
@@ -2736,7 +2752,9 @@
         renderUpdatedAt(result.updatedAt);
         bindScrollSpy();
         if (!options.silent) {
-          showToast("列表已刷新，新增和删除的 skill 已同步");
+          showToast(showScanPanel
+            ? `扫描完成，共 ${skills.length} 条数据`
+            : `已刷新，新增 ${addedCount} 条数据`);
         }
       } catch (error) {
         scanState = hasSkillData ? (skills.length ? "ready" : "empty") : "initial";
@@ -2759,7 +2777,10 @@
     async function updateAllSkills() {
       const button = document.getElementById("updateAll");
       const targets = skills
-        .filter((item) => String(item.status || "").startsWith("可更新") && item.command)
+        .filter((item) => {
+          const status = String(item.status || "");
+          return status.startsWith("可更新") && !status.includes("本地有改动") && item.command;
+        })
         .map((item) => ({ name: item.name, repo: repoPathFromCommand(item.command) }))
         .filter((item) => item.repo);
 
@@ -2957,7 +2978,7 @@
 
       const startScanButton = event.target.closest("#startScan");
       if (startScanButton) {
-        refreshSkills();
+        refreshSkills({ showScanPanel: true });
         return;
       }
 
