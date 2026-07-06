@@ -5,13 +5,15 @@ const { execFile, execFileSync } = require("child_process");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4173);
-const trashRoot = path.join(root, "skill-tidy-trash");
 const homeDir = process.env.HOME || "/Users/brainwung";
 const appSupportDir = path.join(homeDir, "Library", "Application Support");
+const skillTidyDataDir = path.join(appSupportDir, "skill-tidy");
+const trashRoot = process.env.SKILL_TIDY_TRASH ||
+  path.join(skillTidyDataDir, "skill-tidy-trash");
 const configPath = process.env.SKILL_TIDY_CONFIG ||
-  path.join(appSupportDir, "skill-tidy", "skill-tidy.config.json");
+  path.join(skillTidyDataDir, "skill-tidy.config.json");
 const skillsCachePath = process.env.SKILL_TIDY_CACHE ||
-  path.join(appSupportDir, "skill-tidy", "skills-cache.json");
+  path.join(skillTidyDataDir, "skills-cache.json");
 
 const defaultSkillRootCandidates = [
   { path: path.join(homeDir, ".codex", "skills"), platform: "Codex", deletable: true },
