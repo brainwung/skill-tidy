@@ -238,6 +238,9 @@ function startScan() {
 
   scanWorker.once("exit", (code, signal) => {
     if (scanState.status !== "running") return;
+    if (!signal && code === 0) {
+      return;
+    }
     completeScanFailure(
       signal
         ? `扫描进程异常退出：${signal}`
@@ -409,21 +412,30 @@ function createServer() {
 
 if (process.env.SKILL_TIDY_SCAN_WORKER === "1") {
   try {
+    const result = skillsService.scanSkills();
     if (process.send) {
-      process.send({
-        type: "scan:result",
-        result: skillsService.scanSkills()
-      });
+      process.send(
+        {
+          type: "scan:result",
+          result
+        },
+        () => process.disconnect?.()
+      );
+    } else {
+      process.exit(0);
     }
-    process.exit(0);
   } catch (error) {
     if (process.send) {
-      process.send({
-        type: "scan:error",
-        message: error.message || "扫描失败"
-      });
+      process.send(
+        {
+          type: "scan:error",
+          message: error.message || "扫描失败"
+        },
+        () => process.disconnect?.()
+      );
+    } else {
+      process.exit(1);
     }
-    process.exit(1);
   }
 } else if (require.main === module) {
   const server = createServer();
