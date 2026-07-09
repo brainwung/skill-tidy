@@ -18,7 +18,11 @@
       "electron-main.js",
       "preload.js",
       "server.js",
+      "server-lib/**/*",
       "index.html",
+      "styles.css",
+      "app.js",
+      "fallback-skills.js",
       "icon/**/*",
       "build/icon.icns",
       "package.json"
